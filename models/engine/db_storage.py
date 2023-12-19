@@ -39,7 +39,7 @@ class DBStorage:
                 Amenity,
                 Place,
                 City
-                ]
+        ]
         result = {}
         for _class in classes:
             items = self.__session.query(_class).all()
