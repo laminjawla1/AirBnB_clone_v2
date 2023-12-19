@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """ Place Module for HBNB project """
 import models
+from os import getenv
 from sqlalchemy.orm import relationship
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table
@@ -31,28 +32,28 @@ class Place(BaseModel, Base):
 
     latitude = Column(Float)
     longitude = Column(Float)
-    reviews = relationship('Review', cascade='all, delete, delete-orphan', backref='place')
-    amenities = relationship(
-            'Amenity',
-            secondary='place_amenity',
-            viewonly=False)
     amenity_ids = []
 
-    @property
-    def reviews(self):
-        dictionary = models.storage.all()
-        _list = []
-        for key in dictionary:
-            key = shlex.split(key.replace('.', ' '))
-            if key[0] == 'Review':
-                _list.append(dictionary[key])
-        return [item for item in _list if item.place_id == self.id]
+    if getenv("HBNB_TYPE_STORAGE") == "db":
+        reviews = relationship('Review', cascade='all, delete, delete-orphan', backref='place')
+        amenities = relationship('Amenity', back_populates='place_amenities', viewonly=False)
+    else:
+        @property
+        def reviews(self):
+            dictionary = models.storage.all()
+            _list = []
+            for key in dictionary:
+                key = shlex.split(key.replace('.', ' '))
+                if key[0] == 'Review':
+                    _list.append(dictionary[key])
+            return [item for item in _list if item.place_id == self.id]
 
-    @property
-    def amenities(self):
-        return list(filter(lambda a: a.id in Place.amenity_ids, Place.amenities))
+        @property
+        def amenities(self):
+            return self.amenity_ids
 
-    @amenities.setter
-    def amenities(self, amenity):
-        if amenity in Place.amenities:
-            Place.amenity_ids.append(amenity.id)
+        @amenities.setter
+        def amenities(self, amenity=None):
+            """Setter method for amenities"""
+            if type(amenity) is Amenity and amenity.id in self.amenity_ids:
+                self.amenity_ids.append(amenity.id)
