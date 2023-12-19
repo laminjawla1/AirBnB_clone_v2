@@ -4,23 +4,37 @@ import models
 from os import getenv
 from sqlalchemy.orm import relationship
 from models.base_model import BaseModel, Base
+from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, ForeignKey, Float, Table
 
 
-place_amenity = Table('place_amenity', Base.metadata,
-        Column('place_id', String(60), ForeignKey('places.id'),
-            primary_key=True, nullable=False),
-        Column('amenity_id', String(60), ForeignKey('amenities.id'),
-            primary_key=True, nullable=False)
+place_amenity = Table(
+    "place_amenity",
+    Base.metadata,
+    Column(
+        "place_id",
+        String(60),
+        ForeignKey("places.id"),
+        primary_key=True,
+        nullable=False,
+    ),
+    Column(
+        "amenity_id",
+        String(60),
+        ForeignKey("amenities.id"),
+        primary_key=True,
+        nullable=False,
+    ),
 )
 
 
 class Place(BaseModel, Base):
-    """ A place to stay """
-    __tablename__ = 'places'
+    """A place to stay"""
 
-    city_id = Column(String(60), ForeignKey('cities.id'), nullable=False)
-    user_id = Column(String(60), ForeignKey('users.id'), nullable=False)
+    __tablename__ = "places"
+
+    city_id = Column(String(60), ForeignKey("cities.id"), nullable=False)
+    user_id = Column(String(60), ForeignKey("users.id"), nullable=False)
     name = Column(String(128), nullable=False)
 
     description = Column(String(1024))
@@ -35,16 +49,24 @@ class Place(BaseModel, Base):
     amenity_ids = []
 
     if getenv("HBNB_TYPE_STORAGE") == "db":
-        reviews = relationship('Review', cascade='all, delete, delete-orphan', backref='place')
-        amenities = relationship('Amenity', back_populates='place_amenities', viewonly=False)
+        reviews = relationship(
+            "Review", cascade="all, delete, delete-orphan", backref="place"
+        )
+        amenities = relationship(
+            "Amenity",
+            secondary=place_amenity,
+            back_populates="place_amenities",
+            viewonly=False,
+        )
     else:
+
         @property
         def reviews(self):
             dictionary = models.storage.all()
             _list = []
             for key in dictionary:
-                key = shlex.split(key.replace('.', ' '))
-                if key[0] == 'Review':
+                key = shlex.split(key.replace(".", " "))
+                if key[0] == "Review":
                     _list.append(dictionary[key])
             return [item for item in _list if item.place_id == self.id]
 
@@ -55,5 +77,5 @@ class Place(BaseModel, Base):
         @amenities.setter
         def amenities(self, amenity=None):
             """Setter method for amenities"""
-            if type(amenity) is Amenity and amenity.id in self.amenity_ids:
+            if type(amenity) is Amenity and amenity.id not in self.amenity_ids:
                 self.amenity_ids.append(amenity.id)
