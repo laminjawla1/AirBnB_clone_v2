@@ -1,9 +1,7 @@
 #!/usr/bin/python3
-"""
-Automate the build and deployment process via fabric
-"""
-import os
+"""Automate the build and deployment process of web_static"""
 import time
+import os.path
 from fabric.api import local
 from fabric.operations import env, put, run
 
@@ -11,9 +9,7 @@ env.hosts = ["54.160.88.197", "52.91.178.63"]
 
 
 def do_pack():
-    """
-    Pack all the static files in the web_static directory into an archived file
-    """
+    """Generate an tgz archive from web_static folder"""
     try:
         local("mkdir -p versions")
         local(
@@ -21,39 +17,34 @@ def do_pack():
                 time.strftime("%Y%m%d%H%M%S")
             )
         )
-        return "versions/web_static_{}.tgz".format(time.strftime("%Y%m%d%H%M%S"))
-    except:
+        return "versions/web_static_{}.tgz".format(
+                time.strftime("%Y%m%d%H%M%S"))
+    except Exception as e:
         return None
 
 
 def do_deploy(archive_path):
-    """
-    Deploy the distribution to the provided web server
-    """
-    if os.path.isfile(archive_path) is False:
-        return False
-
+    """Distribute the archived file to the specified web server"""
     try:
         file = archive_path.split("/")[-1]
         folder = "/data/web_static/releases/" + file.split(".")[0]
         put(archive_path, "/tmp/")
-        run("mkdir -p {}".format(folder))
-        run("tar -xzf /tmp/{} -C {}".format(file, folder))
-        run("rm /tmp/{}".format(file))
-        run("mv {}/web_static/* {}/".format(folder, folder))
-        run("rm -rf {}/web_static".format(folder))
-        run("rm -rf /data/web_static/current")
-        run("ln -s {} /data/web_static/current".format(folder))
+        sudo("mkdir -p {}".format(folder))
+        sudo("tar -xzf /tmp/{} -C {}".format(file, folder))
+        sudo("rm /tmp/{}".format(file))
+        sudo("mv {}/web_static/* {}/".format(folder, folder))
+        sudo("rm -rf {}/web_static".format(folder))
+        sudo("rm -rf /data/web_static/current")
+        sudo("ln -s {} /data/web_static/current".format(folder))
         print("Deployment done")
         return True
-    except:
+    except Exception as e:
         return False
 
 
 def deploy():
     """Create and distributes an archive to web servers"""
     try:
-        path = do_pack()
-        return do_deploy(path)
-    except:
+        return do_deploy(do_pack())
+    except Exception as e:
         return False
