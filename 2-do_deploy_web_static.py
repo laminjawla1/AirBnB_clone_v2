@@ -22,8 +22,10 @@ def do_pack():
     archived_f_path = "versions/web_static_{}.tgz".format(date)
     status = local("tar -cvzf {} web_static".format(archived_f_path))
 
-    return archived_f_path if status.succeeded else None
-
+    if status.succeeded:
+        return archived_f_path
+    else:
+        return None
 
 def do_deploy(archive_path):
     """
