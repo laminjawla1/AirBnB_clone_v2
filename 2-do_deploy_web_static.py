@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 """
-Compress all files fom web_static directory, generates a .tgz archive file
-and deploy the archive file to a remote server
+Automate the build and deployment process with fabric
 """
 
 import os
 from fabric.api import *
 from datetime import datetime
+
 
 env.hosts = ["54.160.88.197", "52.91.178.63"]
 env.user = "ubuntu"
@@ -14,15 +14,16 @@ env.user = "ubuntu"
 
 def do_pack():
     """
-    Pack all all files in web_static directory into an archive file
+    Pack all the static files in the web_static directory
+    and build from it an arxhcived file
     """
 
     local("mkdir -p versions")
     date = datetime.now().strftime("%Y%m%d%H%M%S")
     archived_f_path = "versions/web_static_{}.tgz".format(date)
-    status = local("tar -cvzf {} web_static".format(archived_f_path))
+    t_gzip_archive = local("tar -cvzf {} web_static".format(archived_f_path))
 
-    if status.succeeded:
+    if t_gzip_archive.succeeded:
         return archived_f_path
     else:
         return None
@@ -30,7 +31,7 @@ def do_pack():
 
 def do_deploy(archive_path):
     """
-    Deploy the archive file to the remote web server
+    Deploy the specified build
     """
     if os.path.exists(archive_path):
         archived_file = archive_path[9:]
