@@ -14,9 +14,7 @@ class FileStorage:
         if cls is not None:
             model = cls.__name__
             items = FileStorage.__objects.items()
-            return dict(
-                filter(lambda x: x[0].split(".")[0] == model, items)
-            )
+            return dict(filter(lambda x: x[0].split(".")[0] == model, items))
         return FileStorage.__objects
 
     def new(self, obj):

@@ -17,18 +17,14 @@ class State(BaseModel, Base):
     name = Column(String(128), nullable=False)
 
     if getenv("HBNB_TYPE_STORAGE") == "db":
-        cities = relationship(
-            "City", cascade="all, delete, delete-orphan", backref="state"
-        )
+        cities = relationship("City", cascade="all, delete", backref="state")
     else:
 
         @property
         def cities(self):
             """Returns all cities of a specific state"""
-            dictionary = models.storage.all()
             _list = []
-            for key in dictionary:
-                key = shlex.split(key.replace(".", " "))
-                if key[0] == "City":
-                    _list.append(dictionary[key])
-            return [item for item in _list if item.state_id == self.id]
+            for city in models.storage.all().values():
+                if city.state_id == self.id:
+                    _list.append(city)
+            return _list
